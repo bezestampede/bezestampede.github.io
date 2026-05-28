@@ -454,8 +454,11 @@
   <div class="nav-item" onclick="navigate('investments', this)">
     <span class="nav-icon">◇</span> Investments
   </div>
+  <div class="nav-item" onclick="navigate('networth-snapshot', this)">
+    <span class="nav-icon">◉</span> Net Worth
+  </div>
   <div class="nav-item" onclick="navigate('networth', this)">
-    <span class="nav-icon">△</span> Net Worth
+    <span class="nav-icon">△</span> Projections
   </div>
 
   <div class="nav-section">Tools</div>
@@ -469,7 +472,9 @@
   <div class="sidebar-footer">
     <div style="margin-bottom:4px">Household Income</div>
     <div class="income">$176,500 / yr</div>
-    <div style="margin-top:8px;font-size:9px;color:var(--text3)">26 pay periods · 2026</div>
+    <div style="margin-top:10px;margin-bottom:4px">Net Worth</div>
+    <div class="income" style="color:var(--accent2)">$491,250</div>
+    <div style="margin-top:8px;font-size:9px;color:var(--text3)">Age 27 · 2026</div>
   </div>
 </nav>
 
@@ -508,6 +513,18 @@
         <div class="stat-value gold">$2,230</div>
         <div class="stat-sub">Auto-invested</div>
         <div class="stat-change pos">$26,760 / 6mo</div>
+      </div>
+      <div class="stat-card blue" style="border-top:2px solid var(--accent2)">
+        <div class="stat-label">Current Net Worth</div>
+        <div class="stat-value blue">$491,250</div>
+        <div class="stat-sub">Assets minus all debt</div>
+        <div class="stat-change pos">↑ $447k invested</div>
+      </div>
+      <div class="stat-card green" style="border-top:2px solid var(--accent)">
+        <div class="stat-label">Total Investments</div>
+        <div class="stat-value green">$447,000</div>
+        <div class="stat-sub">All investment accounts</div>
+        <div class="stat-change pos">↑ 2.53x income</div>
       </div>
     </div>
 
@@ -610,24 +627,28 @@
   <div class="page" id="page-investments">
     <div class="stat-grid">
       <div class="stat-card green">
-        <div class="stat-label">Total Roth</div>
-        <div class="stat-value green">$27,331</div>
-        <div class="stat-sub">IRA + 401k combined</div>
+        <div class="stat-label">Roth (IRA + 401k)</div>
+        <div class="stat-value green" id="inv-roth-bal">$135,000</div>
+        <div class="stat-sub">Current balance</div>
+        <div class="stat-change pos">+$27,331/yr new money</div>
       </div>
       <div class="stat-card blue">
         <div class="stat-label">Traditional 401k</div>
-        <div class="stat-value blue">$17,650</div>
-        <div class="stat-sub">Employer contributions</div>
+        <div class="stat-value blue" id="inv-trad-bal">$118,000</div>
+        <div class="stat-sub">Current balance</div>
+        <div class="stat-change pos">+$17,650/yr employer</div>
       </div>
       <div class="stat-card gold">
         <div class="stat-label">HSA</div>
-        <div class="stat-value gold">$5,200</div>
-        <div class="stat-sub">Triple tax-advantaged</div>
+        <div class="stat-value gold" id="inv-hsa-bal">$34,000</div>
+        <div class="stat-sub">Current balance</div>
+        <div class="stat-change pos">+$5,200/yr contributions</div>
       </div>
       <div class="stat-card orange">
         <div class="stat-label">Taxable Brokerage</div>
-        <div class="stat-value orange">$7,800</div>
-        <div class="stat-sub">Flexible account</div>
+        <div class="stat-value orange" id="inv-brok-bal">$160,000</div>
+        <div class="stat-sub">Current balance</div>
+        <div class="stat-change pos">+$7,800/yr contributions</div>
       </div>
     </div>
 
@@ -709,6 +730,79 @@
     </div>
   </div>
 
+
+  <!-- ====== NET WORTH SNAPSHOT PAGE ====== -->
+  <div class="page" id="page-networth-snapshot">
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Net Worth</div>
+        <div class="stat-value green" id="nws-networth">$491,250</div>
+        <div class="stat-sub">Assets minus all debt</div>
+        <div class="stat-change pos" id="nws-nw-sub">Age 27</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Total Investments</div>
+        <div class="stat-value blue" id="nws-investments">$447,000</div>
+        <div class="stat-sub">All invested accounts</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Total Debt</div>
+        <div class="stat-value orange" id="nws-debt">$38,250</div>
+        <div class="stat-sub">Car loans + student loans</div>
+        <div class="stat-change pos">excl. mortgage</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Home Equity</div>
+        <div class="stat-value gold" id="nws-equity">$52,000</div>
+        <div class="stat-sub">Of $400k home value</div>
+      </div>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Assets vs. Liabilities</div>
+            <div class="chart-sub">Full balance sheet snapshot</div>
+          </div>
+          <div class="chart-tag" id="nws-gross-tag">$651,500</div>
+        </div>
+        <canvas id="chart-assets"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Investment Breakdown</div>
+            <div class="chart-sub">By account type · Current balances</div>
+          </div>
+        </div>
+        <canvas id="chart-inv-breakdown"></canvas>
+      </div>
+    </div>
+
+    <div class="section-header"><h2>Balance Sheet Detail</h2><div class="section-divider"></div></div>
+    <div class="chart-grid cols-2">
+      <div class="chart-box">
+        <div class="chart-header"><div><div class="chart-title">Assets</div></div></div>
+        <div id="nws-assets-list"></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header"><div><div class="chart-title">Liabilities</div></div></div>
+        <div id="nws-liabilities-list"></div>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-top:20px">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Net Worth vs. Peers</div>
+          <div class="chart-sub">Approximate median net worth by age (Fed data)</div>
+        </div>
+      </div>
+      <canvas id="chart-nw-peers" style="max-height:220px"></canvas>
+    </div>
+  </div>
+
   <!-- ====== SCENARIOS PAGE ====== -->
   <div class="page" id="page-scenarios">
     <div class="section-header"><h2>What-If Scenarios</h2><div class="section-divider"></div></div>
@@ -782,7 +876,47 @@
         </div>
         <div class="field-row">
           <div class="field-label">Current Age</div>
-          <input class="field-input" id="set-age" value="30" type="number">
+          <input class="field-input" id="set-age" value="27" type="number">
+        </div>
+        <button class="save-btn" onclick="applySettings()">Apply Changes</button>
+      </div>
+      <div class="settings-card">
+        <h3>Current Balances</h3>
+        <div class="field-row">
+          <div class="field-label">Roth IRA + Roth 401k Balance</div>
+          <input class="field-input" id="set-bal-roth" value="135000" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Traditional 401k Balance</div>
+          <input class="field-input" id="set-bal-trad" value="118000" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">HSA Balance</div>
+          <input class="field-input" id="set-bal-hsa" value="34000" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Brokerage Balance</div>
+          <input class="field-input" id="set-bal-brok" value="160000" type="number">
+        </div>
+        <button class="save-btn" onclick="applySettings()">Apply Changes</button>
+      </div>
+      <div class="settings-card">
+        <h3>Assets &amp; Liabilities</h3>
+        <div class="field-row">
+          <div class="field-label">Home Value</div>
+          <input class="field-input" id="set-home-val" value="400000" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Home Equity</div>
+          <input class="field-input" id="set-home-eq" value="52000" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Car Loans</div>
+          <input class="field-input" id="set-car-loans" value="28250" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Student Loans</div>
+          <input class="field-input" id="set-student-loans" value="10000" type="number">
         </div>
         <button class="save-btn" onclick="applySettings()">Apply Changes</button>
       </div>
@@ -806,10 +940,29 @@ let S = {
   rothIRA: 14976,
   hsa: 5200,
   brokerage: 7800,
-  age: 30,
+  age: 27,
   returnRate: 7,
   horizon: 20,
-  scenario: 'bear'
+  scenario: 'bear',
+  // Current balances
+  bal: {
+    rothIRA:      135000,   // Roth IRAs + Roth 401ks combined
+    trad401k:     118000,   // Traditional 401ks
+    hsaBalance:    34000,   // HSA accounts
+    brokerage:    160000,   // Taxable brokerage
+    cash:          26500,   // Total cash (incl. $18k emergency fund)
+    emergencyFund: 18000,
+  },
+  // Assets & liabilities
+  assets: {
+    homeValue:    400000,   // $380k purchase + $20k improvements appreciation
+    homeEquity:    52000,
+    cars:          30000,
+  },
+  liabilities: {
+    carLoans:      28250,   // portion of $38,250 debt
+    studentLoans:  10000,   // remainder
+  }
 };
 
 function derived() {
@@ -819,10 +972,18 @@ function derived() {
   const savingsRate = total / S.income * 100;
   const perPaycheck = total / S.payPeriods;
   const grossPerPaycheck = S.income / S.payPeriods;
-  // rough take-home: 22% effective tax + 401k employee contrib
   const taxAdv = S.rothIRA + S.hsa + emp401k + employer401k;
   const takehome = S.income * 0.78 - emp401k;
-  return { emp401k, employer401k, total, savingsRate, perPaycheck, grossPerPaycheck, taxAdv, takehome };
+  // Net worth
+  const totalInvestments = S.bal.rothIRA + S.bal.trad401k + S.bal.hsaBalance + S.bal.brokerage;
+  const totalAssets = totalInvestments + S.bal.cash + S.assets.homeEquity + S.assets.cars;
+  const totalDebt = S.liabilities.carLoans + S.liabilities.studentLoans;
+  const netWorth = totalAssets - totalDebt;
+  const mortgageDebt = S.assets.homeValue - S.assets.homeEquity;
+  const totalLiabilities = totalDebt + mortgageDebt;
+  const grossAssets = totalInvestments + S.bal.cash + S.assets.homeValue + S.assets.cars;
+  return { emp401k, employer401k, total, savingsRate, perPaycheck, grossPerPaycheck, taxAdv, takehome,
+           totalInvestments, totalAssets, totalDebt, netWorth, mortgageDebt, totalLiabilities, grossAssets };
 }
 
 // ─── CHARTS REGISTRY ─────────────────────────────────────
@@ -852,12 +1013,13 @@ Chart.defaults.font.size = 11;
 
 // ─── NAVIGATION ──────────────────────────────────────────
 const pageTitles = {
-  overview:    'Overview',
-  savings:     'Income & Savings',
-  investments: 'Investments',
-  networth:    'Net Worth',
-  scenarios:   'Scenarios',
-  settings:    'Settings'
+  overview:           'Overview',
+  savings:            'Income & Savings',
+  investments:        'Investments',
+  'networth-snapshot':'Net Worth',
+  networth:           'Projections',
+  scenarios:          'Scenarios',
+  settings:           'Settings'
 };
 function navigate(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -883,6 +1045,7 @@ function renderPage(page) {
   if (page === 'overview') renderOverview(d);
   if (page === 'savings') renderSavings(d);
   if (page === 'investments') renderInvestments();
+  if (page === 'networth-snapshot') renderNWSnapshot();
   if (page === 'networth') renderNetWorth();
   if (page === 'scenarios') updateScenarios();
   if (page === 'settings') updateSettings();
@@ -1026,12 +1189,17 @@ function renderSavings(d) {
 // ─── INVESTMENTS ─────────────────────────────────────────
 function renderInvestments() {
   const d = derived();
+  // Update balance stat cards
+  document.getElementById('inv-roth-bal').textContent = fmt(S.bal.rothIRA);
+  document.getElementById('inv-trad-bal').textContent = fmt(S.bal.trad401k);
+  document.getElementById('inv-hsa-bal').textContent = fmt(S.bal.hsaBalance);
+  document.getElementById('inv-brok-bal').textContent = fmt(S.bal.brokerage);
 
-  // Tax treatment donut
-  const roth = S.rothIRA + d.emp401k;
-  const trad = d.employer401k;
-  const taxable = S.brokerage;
-  const hsa = S.hsa;
+  // Tax treatment donut (uses current balances)
+  const roth = S.bal.rothIRA;
+  const trad = S.bal.trad401k;
+  const taxable = S.bal.brokerage;
+  const hsa = S.bal.hsaBalance;
   makeChart('chart-tax-mix', {
     type: 'doughnut',
     data: {
@@ -1110,7 +1278,8 @@ function updatePortfolioChart() {
   const d = derived();
   const r = S.returnRate / 100;
   const labels = Array.from({length: S.horizon}, (_,i) => `${new Date().getFullYear() + i}`);
-  let total = 0;
+  // Start from current total investment balance
+  let total = S.bal.rothIRA + S.bal.trad401k + S.bal.hsaBalance + S.bal.brokerage;
   const vals = labels.map(() => { total = (total + d.total) * (1 + r); return Math.round(total); });
   makeChart('chart-portfolio', {
     type: 'line',
@@ -1146,10 +1315,10 @@ function renderNetWorth() {
   const d = derived();
 
   // Milestones
-  const targets = [250000, 500000, 750000, 1000000, 1500000, 2000000];
+  const targets = [500000, 750000, 1000000, 1500000, 2000000, 3000000];
   const r = 0.07;
   document.getElementById('milestone-grid').innerHTML = targets.map(t => {
-    let v = 0, yr = 0;
+    let v = d.netWorth, yr = 0;
     while(v < t && yr < 50) { v = (v + d.total) * (1+r); yr++; }
     const reached = yr <= 30;
     return `
@@ -1174,8 +1343,9 @@ function setScenario(s, el) {
   const d = derived();
   const yrs = 30;
   const labels = Array.from({length:yrs},(_,i)=>(new Date().getFullYear()+i).toString());
+  const currentNW = d.netWorth;
   const makeVals = r => {
-    let v=0;
+    let v = currentNW;
     return labels.map(()=>{ v=(v+d.total)*(1+r); return Math.round(v); });
   };
   makeChart('chart-nw', {
@@ -1207,7 +1377,7 @@ function renderFireAnalysis(d) {
   const annualSpend = d.takehome - S.brokerage;
   const fireTarget = annualSpend * 25;
   const r = 0.07;
-  let v = 0, yr = 0;
+  let v = d.totalInvestments, yr = 0;
   while(v < fireTarget && yr < 60) { v = (v+d.total)*(1+r); yr++; }
   document.getElementById('fire-analysis').innerHTML = `
     <div style="padding:8px 0">
@@ -1236,7 +1406,7 @@ function renderCompound(d) {
   const yrs = 30;
   const r = 0.07;
   const labels = Array.from({length:yrs},(_,i)=>i+1);
-  let total = 0;
+  let total = d.totalInvestments;
   const totalVals = [], contribVals = [], growthVals = [];
   let cumContrib = 0;
   for(let i=0;i<yrs;i++){
@@ -1269,6 +1439,149 @@ function renderCompound(d) {
   });
 }
 
+
+// ─── NET WORTH SNAPSHOT ───────────────────────────────────
+function renderNWSnapshot() {
+  const d = derived();
+  // Stat cards
+  document.getElementById('nws-networth').textContent = fmt(d.netWorth);
+  document.getElementById('nws-nw-sub').textContent = `Age ${S.age} · 2026`;
+  document.getElementById('nws-investments').textContent = fmt(d.totalInvestments);
+  document.getElementById('nws-debt').textContent = fmt(d.totalDebt);
+  document.getElementById('nws-equity').textContent = fmt(S.assets.homeEquity);
+  document.getElementById('nws-gross-tag').textContent = fmt(d.grossAssets);
+
+  // Assets vs liabilities bar chart
+  makeChart('chart-assets', {
+    type: 'bar',
+    data: {
+      labels: ['Roth Accts', 'Trad 401k', 'HSA', 'Brokerage', 'Cash', 'Home Equity', 'Cars', 'Car/Student Debt', 'Mortgage'],
+      datasets: [{
+        label: 'Amount',
+        data: [S.bal.rothIRA, S.bal.trad401k, S.bal.hsaBalance, S.bal.brokerage, S.bal.cash,
+               S.assets.homeEquity, S.assets.cars,
+               -(d.totalDebt), -(d.mortgageDebt)],
+        backgroundColor: [
+          COLORS.green+'88', COLORS.blue+'88', COLORS.gold+'88', COLORS.orange+'88', COLORS.teal+'88',
+          COLORS.purple+'88', COLORS.pink+'88',
+          COLORS.red+'88', COLORS.red+'55'
+        ],
+        borderColor: [
+          COLORS.green, COLORS.blue, COLORS.gold, COLORS.orange, COLORS.teal,
+          COLORS.purple, COLORS.pink,
+          COLORS.red, COLORS.red
+        ],
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmt(Math.abs(c.raw))}`}} },
+      scales: {
+        y: { ticks:{callback:v=>'$'+(Math.abs(v)>=1000?(Math.abs(v)/1000).toFixed(0)+'k':Math.abs(v))}, grid:{color:'#1e2430'} },
+        x: { grid:{display:false}, ticks:{maxRotation:35,font:{size:10}} }
+      }
+    }
+  });
+
+  // Investment breakdown donut
+  makeChart('chart-inv-breakdown', {
+    type: 'doughnut',
+    data: {
+      labels: ['Roth IRA + Roth 401k','Traditional 401k','HSA','Taxable Brokerage'],
+      datasets: [{
+        data: [S.bal.rothIRA, S.bal.trad401k, S.bal.hsaBalance, S.bal.brokerage],
+        backgroundColor: [COLORS.green+'88', COLORS.blue+'88', COLORS.gold+'88', COLORS.orange+'88'],
+        borderColor: [COLORS.green, COLORS.blue, COLORS.gold, COLORS.orange],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: {position:'bottom',labels:{padding:12,boxWidth:10}},
+        tooltip: {callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)} (${(c.raw/d.totalInvestments*100).toFixed(1)}%)`}}
+      }
+    }
+  });
+
+  // Assets list
+  const assetItems = [
+    {name:'Roth IRAs + Roth 401ks', val:S.bal.rothIRA, color:COLORS.green, tag:'Roth'},
+    {name:'Traditional 401ks', val:S.bal.trad401k, color:COLORS.blue, tag:'Pre-tax'},
+    {name:'HSA Accounts', val:S.bal.hsaBalance, color:COLORS.gold, tag:'Triple-tax'},
+    {name:'Taxable Brokerage', val:S.bal.brokerage, color:COLORS.orange, tag:'Taxable'},
+    {name:'Cash (total)', val:S.bal.cash, color:COLORS.teal, tag:`$${(S.bal.emergencyFund/1000).toFixed(0)}k emergency`},
+    {name:'Home Equity', val:S.assets.homeEquity, color:COLORS.purple, tag:`$${(S.assets.homeValue/1000).toFixed(0)}k home`},
+    {name:'Vehicles', val:S.assets.cars, color:COLORS.pink, tag:'2 cars'},
+  ];
+  document.getElementById('nws-assets-list').innerHTML = assetItems.map(a => `
+    <div class="alloc-item">
+      <div class="alloc-dot" style="background:${a.color}"></div>
+      <span class="alloc-name">${a.name}</span>
+      <span style="font-size:10px;color:var(--text3);margin-right:8px">${a.tag}</span>
+      <span class="alloc-amt" style="color:${a.color}">${fmt(a.val)}</span>
+    </div>`).join('') +
+    `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px;display:flex;justify-content:space-between;font-size:13px">
+      <span style="color:var(--text3)">Total Assets</span>
+      <span style="font-family:Syne,sans-serif;font-weight:700;color:var(--accent)">${fmt(d.grossAssets)}</span>
+    </div>`;
+
+  // Liabilities list
+  const liabItems = [
+    {name:'Car Loans', val:S.liabilities.carLoans, color:COLORS.red},
+    {name:'Student Loans', val:S.liabilities.studentLoans, color:COLORS.orange},
+    {name:'Mortgage (remaining)', val:d.mortgageDebt, color:COLORS.red+'aa'},
+  ];
+  document.getElementById('nws-liabilities-list').innerHTML = liabItems.map(l => `
+    <div class="alloc-item">
+      <div class="alloc-dot" style="background:${l.color}"></div>
+      <span class="alloc-name">${l.name}</span>
+      <span class="alloc-amt" style="color:${l.color}">-${fmt(l.val)}</span>
+    </div>`).join('') +
+    `<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:12px;display:flex;justify-content:space-between;font-size:13px">
+      <span style="color:var(--text3)">Total Liabilities</span>
+      <span style="font-family:Syne,sans-serif;font-weight:700;color:var(--danger)">-${fmt(d.totalLiabilities)}</span>
+    </div>
+    <div style="margin-top:10px;padding:12px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.15);border-radius:8px;display:flex;justify-content:space-between;font-size:13px">
+      <span style="color:var(--text2)">Net Worth</span>
+      <span style="font-family:Syne,sans-serif;font-weight:800;font-size:18px;color:var(--accent)">${fmt(d.netWorth)}</span>
+    </div>`;
+
+  // Peers comparison chart (approximate Fed Survey data)
+  makeChart('chart-nw-peers', {
+    type: 'bar',
+    data: {
+      labels: ['Under 35
+(median)', 'Under 35
+(mean)', '35-44
+(median)', '35-44
+(mean)', 'Your NW
+(age 27)'],
+      datasets: [{
+        data: [39000, 183500, 135600, 549300, d.netWorth],
+        backgroundColor: [COLORS.blue+'55', COLORS.blue+'33', COLORS.blue+'55', COLORS.blue+'33', COLORS.green+'99'],
+        borderColor: [COLORS.blue, COLORS.blue, COLORS.blue, COLORS.blue, COLORS.green],
+        borderWidth: 1.5,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}
+      },
+      scales: {
+        y: { ticks:{callback:v=>'$'+(v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'k')}, grid:{color:'#1e2430'} },
+        x: { grid:{display:false} }
+      }
+    }
+  });
+}
+
 // ─── SCENARIOS ────────────────────────────────────────────
 function updateScenarios() {
   const rate = parseFloat(document.getElementById('sc-rate').value);
@@ -1281,7 +1594,7 @@ function updateScenarios() {
 
   const yrs = 30;
   const labels = Array.from({length:yrs},(_,i)=>(new Date().getFullYear()+i).toString());
-  let income = S.income, portfolio = 0;
+  let income = S.income, portfolio = derived().netWorth;
   const vals = labels.map(()=>{
     const contrib = income * rate / 100;
     portfolio = (portfolio + contrib) * (1 + ret/100);
@@ -1356,6 +1669,14 @@ function applySettings() {
   S.hsa = parseFloat(document.getElementById('set-hsa').value) || S.hsa;
   S.brokerage = parseFloat(document.getElementById('set-brokerage').value) || S.brokerage;
   S.age = parseInt(document.getElementById('set-age').value) || S.age;
+  S.bal.rothIRA = parseFloat(document.getElementById('set-bal-roth').value) || S.bal.rothIRA;
+  S.bal.trad401k = parseFloat(document.getElementById('set-bal-trad').value) || S.bal.trad401k;
+  S.bal.hsaBalance = parseFloat(document.getElementById('set-bal-hsa').value) || S.bal.hsaBalance;
+  S.bal.brokerage = parseFloat(document.getElementById('set-bal-brok').value) || S.bal.brokerage;
+  S.assets.homeValue = parseFloat(document.getElementById('set-home-val').value) || S.assets.homeValue;
+  S.assets.homeEquity = parseFloat(document.getElementById('set-home-eq').value) || S.assets.homeEquity;
+  S.liabilities.carLoans = parseFloat(document.getElementById('set-car-loans').value) || S.liabilities.carLoans;
+  S.liabilities.studentLoans = parseFloat(document.getElementById('set-student-loans').value) || S.liabilities.studentLoans;
   updateSettings();
 }
 
