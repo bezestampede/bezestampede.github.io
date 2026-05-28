@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2430;
+    --accent: #00e5a0;
+    --accent2: #0099ff;
+    --accent3: #ff6b35;
+    --accent4: #ffd700;
+    --text: #e8edf5;
+    --text2: #7a8799;
+    --text3: #4a5568;
+    --danger: #ff4d6d;
+    --sidebar-w: 220px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: transform 0.3s ease;
+  }
+  .sidebar-logo {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .sidebar-logo .sub {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 3px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .nav-section {
+    padding: 16px 12px 8px;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    margin: 2px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text2);
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: rgba(0,229,160,0.08);
+    color: var(--accent);
+    border-color: rgba(0,229,160,0.15);
+  }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text3);
+    line-height: 1.6;
+  }
+  .sidebar-footer .income { color: var(--accent); font-weight: 500; font-size: 12px; }
+
+  /* MAIN CONTENT */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .page-title span { color: var(--accent); }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    color: var(--accent);
+    font-size: 11px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* PAGES */
+  .page { display: none; padding: 32px; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* STAT CARDS */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: rgba(0,229,160,0.25); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-card.blue::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .stat-card.orange::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .stat-card.gold::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+  .stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.blue { color: var(--accent2); }
+  .stat-value.orange { color: var(--accent3); }
+  .stat-value.gold { color: var(--accent4); }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 6px; }
+  .stat-change { font-size: 11px; margin-top: 4px; }
+  .stat-change.pos { color: var(--accent); }
+  .stat-change.neg { color: var(--danger); }
+
+  /* CHART CONTAINERS */
+  .chart-grid { display: grid; gap: 20px; margin-bottom: 28px; }
+  .chart-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid.cols-3 { grid-template-columns: 2fr 1fr; }
+  .chart-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .chart-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .chart-tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(0,229,160,0.08);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.15);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  canvas { max-height: 260px; }
+
+  /* BREAKDOWN TABLE */
+  .breakdown-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .breakdown-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown-table td { padding: 12px 12px; border-bottom: 1px solid rgba(30,36,48,0.5); }
+  .breakdown-table tr:last-child td { border-bottom: none; }
+  .breakdown-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .acct-name { font-weight: 500; color: var(--text); }
+  .acct-type { font-size: 10px; color: var(--text3); }
+  .amount { font-family: 'Syne', sans-serif; font-weight: 600; }
+  .pill {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .pill.roth { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .pill.trad { background: rgba(0,153,255,0.1); color: var(--accent2); border: 1px solid rgba(0,153,255,0.2); }
+  .pill.taxable { background: rgba(255,107,53,0.1); color: var(--accent3); border: 1px solid rgba(255,107,53,0.2); }
+  .pill.hsa { background: rgba(255,215,0,0.1); color: var(--accent4); border: 1px solid rgba(255,215,0,0.2); }
+
+  /* SLIDERS / INPUTS */
+  .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px; }
+  .control-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .control-label { font-size: 11px; color: var(--text2); margin-bottom: 8px; letter-spacing: 0.5px; }
+  .control-value { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: 12px; }
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px rgba(0,229,160,0.4);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    cursor: pointer;
+  }
+  .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text3); margin-top: 6px; }
+
+  /* PROGRESS BARS */
+  .progress-row { margin-bottom: 16px; }
+  .progress-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+  .progress-name { color: var(--text2); }
+  .progress-pct { color: var(--text); font-weight: 500; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+  /* ALLOCATION LIST */
+  .alloc-list { list-style: none; }
+  .alloc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(30,36,48,0.5);
+    font-size: 12px;
+  }
+  .alloc-item:last-child { border-bottom: none; }
+  .alloc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alloc-name { color: var(--text2); flex: 1; }
+  .alloc-amt { color: var(--text); font-weight: 500; }
+  .alloc-pct { color: var(--text3); font-size: 11px; width: 36px; text-align: right; }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .section-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .section-divider {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* SCENARIO BADGE */
+  .scenario-label {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text3);
+    transition: all 0.15s;
+  }
+  .scenario-label.active { background: rgba(0,229,160,0.08); color: var(--accent); border-color: rgba(0,229,160,0.3); }
+
+  /* SETTINGS */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .settings-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; margin-bottom: 20px; color: var(--text); }
+  .field-row { margin-bottom: 16px; }
+  .field-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; letter-spacing: 0.5px; }
+  .field-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus { border-color: rgba(0,229,160,0.4); }
+  .save-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    width: 100%;
+    margin-top: 4px;
+  }
+  .save-btn:hover { opacity: 0.85; }
+
+  /* NET WORTH MILESTONE */
+  .milestone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .milestone {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+  }
+  .milestone .year { font-size: 11px; color: var(--text3); margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  .milestone .target { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+  .milestone .desc { font-size: 10px; color: var(--text3); margin-top: 5px; }
+  .milestone.reached { border-color: rgba(0,229,160,0.3); }
+  .milestone.reached .target { color: var(--accent); }
+
+  /* HAMBURGER (mobile) */
+  #hamburger {
+    display: none;
+    position: fixed;
+    top: 16px; left: 16px;
+    z-index: 200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  @media (max-width: 900px) {
+    :root { --sidebar-w: 0px; }
+    #sidebar { transform: translateX(-220px); width: 220px; }
+    #sidebar.open { transform: translateX(0); }
+    #main { margin-left: 0; }
+    #hamburger { display: block; }
+    .chart-grid.cols-2, .chart-grid.cols-3 { grid-template-columns: 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .page { padding: 20px 16px; padding-top: 64px; }
+    .topbar { padding: 16px 16px 16px 56px; }
+  }
+</style>
+</head>
+<body>
+
+<button id="hamburger" onclick="toggleSidebar()">☰</button>
+
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">ATLAS</div>
+    <div class="sub">Financial Dashboard</div>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" onclick="navigate('overview', this)">
+    <span class="nav-icon">◈</span> Overview
+  </div>
+  <div class="nav-item" onclick="navigate('savings', this)">
+    <span class="nav-icon">◎</span> Income & Savings
+  </div>
+  <div class="nav-item" onclick="navigate('investments', this)">
+    <span class="nav-icon">◇</span> Investments
+  </div>
+  <div class="nav-item" onclick="navigate('networth', this)">
+    <span class="nav-icon">△</span> Net Worth
+  </div>
+
+  <div class="nav-section">Tools</div>
+  <div class="nav-item" onclick="navigate('scenarios', this)">
+    <span class="nav-icon">⊕</span> Scenarios
+  </div>
+  <div class="nav-item" onclick="navigate('settings', this)">
+    <span class="nav-icon">◻</span> Settings
+  </div>
+
+  <div class="sidebar-footer">
+    <div style="margin-bottom:4px">Household Income</div>
+    <div class="income">$176,500 / yr</div>
+    <div style="margin-top:8px;font-size:9px;color:var(--text3)">26 pay periods · 2026</div>
+  </div>
+</nav>
+
+<main id="main">
+  <div class="topbar">
+    <div class="page-title" id="topbar-title">Overview <span>·</span></div>
+    <div class="topbar-right">
+      <div class="live-badge"><div class="live-dot"></div> Live</div>
+      <span id="topbar-date"></span>
+    </div>
+  </div>
+
+  <!-- ====== OVERVIEW PAGE ====== -->
+  <div class="page active" id="page-overview">
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Annual Savings</div>
+        <div class="stat-value green" id="ov-total-savings">$57,981</div>
+        <div class="stat-sub">All accounts combined</div>
+        <div class="stat-change pos" id="ov-savings-rate">↑ 32.9% savings rate</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Gross Income</div>
+        <div class="stat-value blue">$176,500</div>
+        <div class="stat-sub">Household combined</div>
+        <div class="stat-change pos">$6,788 / paycheck</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Tax-Advantaged</div>
+        <div class="stat-value orange" id="ov-tax-adv">$50,181</div>
+        <div class="stat-sub">Roth IRA + 401k + HSA</div>
+        <div class="stat-change pos">↑ 86.5% of savings</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Per Paycheck</div>
+        <div class="stat-value gold">$2,230</div>
+        <div class="stat-sub">Auto-invested</div>
+        <div class="stat-change pos">$26,760 / 6mo</div>
+      </div>
+    </div>
+
+    <div class="chart-grid cols-3">
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Savings Allocation</div>
+            <div class="chart-sub">By account type · Annual</div>
+          </div>
+          <div class="chart-tag">$57,981</div>
+        </div>
+        <canvas id="chart-alloc"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Account Breakdown</div>
+            <div class="chart-sub">Annual contributions</div>
+          </div>
+        </div>
+        <ul class="alloc-list" id="alloc-list"></ul>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Contribution Progress</h2>
+      <div class="section-divider"></div>
+      <span style="font-size:11px;color:var(--text3)">vs. annual limits</span>
+    </div>
+    <div class="chart-box">
+      <div id="progress-bars"></div>
+    </div>
+  </div>
+
+  <!-- ====== INCOME & SAVINGS PAGE ====== -->
+  <div class="page" id="page-savings">
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Gross Income</div>
+        <div class="stat-value green">$176,500</div>
+        <div class="stat-sub">Before taxes</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Roth 401k (Employee)</div>
+        <div class="stat-value blue">$12,355</div>
+        <div class="stat-sub">7% of $176,500</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Employer Match</div>
+        <div class="stat-value orange">$17,650</div>
+        <div class="stat-sub">10% traditional 401k</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Take-Home Est.</div>
+        <div class="stat-value gold" id="sv-takehome">~$118,519</div>
+        <div class="stat-sub">After taxes + 401k</div>
+      </div>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Income Waterfall</div>
+            <div class="chart-sub">Where each dollar goes</div>
+          </div>
+        </div>
+        <canvas id="chart-waterfall"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Annual Contributions Detail</div>
+            <div class="chart-sub">All savings vehicles</div>
+          </div>
+        </div>
+        <canvas id="chart-contribs"></canvas>
+      </div>
+    </div>
+
+    <div class="section-header"><h2>Paycheck Breakdown</h2><div class="section-divider"></div></div>
+    <div class="chart-box">
+      <table class="breakdown-table">
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Type</th>
+            <th>Annual</th>
+            <th>Per Paycheck</th>
+            <th>% of Income</th>
+          </tr>
+        </thead>
+        <tbody id="paycheck-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ====== INVESTMENTS PAGE ====== -->
+  <div class="page" id="page-investments">
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-label">Total Roth</div>
+        <div class="stat-value green">$27,331</div>
+        <div class="stat-sub">IRA + 401k combined</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Traditional 401k</div>
+        <div class="stat-value blue">$17,650</div>
+        <div class="stat-sub">Employer contributions</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">HSA</div>
+        <div class="stat-value gold">$5,200</div>
+        <div class="stat-sub">Triple tax-advantaged</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Taxable Brokerage</div>
+        <div class="stat-value orange">$7,800</div>
+        <div class="stat-sub">Flexible account</div>
+      </div>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Tax Treatment Mix</div>
+            <div class="chart-sub">Annual new money · $57,981</div>
+          </div>
+        </div>
+        <canvas id="chart-tax-mix"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">10-Year Growth Projection</div>
+            <div class="chart-sub">By account type · 7% avg return</div>
+          </div>
+        </div>
+        <canvas id="chart-growth10"></canvas>
+      </div>
+    </div>
+
+    <div class="section-header"><h2>Projected Account Values</h2><div class="section-divider"></div>
+      <span style="font-size:11px;color:var(--text3)" id="inv-return-label">at 7.0% return</span>
+    </div>
+    <div class="controls-grid">
+      <div class="control-card">
+        <div class="control-label">Expected Annual Return</div>
+        <div class="control-value" id="inv-return-val">7.0%</div>
+        <input type="range" min="3" max="12" step="0.5" value="7" id="slider-return" oninput="updateReturn(this.value)">
+        <div class="range-labels"><span>3%</span><span>Conservative → Aggressive</span><span>12%</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Projection Horizon</div>
+        <div class="control-value" id="inv-years-val">20 yrs</div>
+        <input type="range" min="5" max="40" step="5" value="20" id="slider-years" oninput="updateYears(this.value)">
+        <div class="range-labels"><span>5</span><span>Years</span><span>40</span></div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-header">
+        <div><div class="chart-title">Portfolio Growth Over Time</div><div class="chart-sub" id="inv-proj-sub">Assuming 7.0% annual return · 20 year horizon</div></div>
+      </div>
+      <canvas id="chart-portfolio" style="max-height:300px"></canvas>
+    </div>
+  </div>
+
+  <!-- ====== NET WORTH PAGE ====== -->
+  <div class="page" id="page-networth">
+    <div class="milestone-grid" id="milestone-grid"></div>
+
+    <div class="chart-box" style="margin-bottom:20px">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Net Worth Trajectory</div>
+          <div class="chart-sub">Annual savings invested at variable returns</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <span class="scenario-label active" id="scen-bear" onclick="setScenario('bear',this)">Bear 5%</span>
+          <span class="scenario-label" id="scen-base" onclick="setScenario('base',this)">Base 7%</span>
+          <span class="scenario-label" id="scen-bull" onclick="setScenario('bull',this)">Bull 10%</span>
+        </div>
+      </div>
+      <canvas id="chart-nw" style="max-height:320px"></canvas>
+    </div>
+
+    <div class="chart-grid cols-2">
+      <div class="chart-box">
+        <div class="chart-header"><div><div class="chart-title">Fire Number Analysis</div><div class="chart-sub">4% withdrawal rule</div></div></div>
+        <div id="fire-analysis"></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-header"><div><div class="chart-title">Contribution vs. Growth</div><div class="chart-sub">How compounding takes over</div></div></div>
+        <canvas id="chart-compound"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SCENARIOS PAGE ====== -->
+  <div class="page" id="page-scenarios">
+    <div class="section-header"><h2>What-If Scenarios</h2><div class="section-divider"></div></div>
+    <div class="controls-grid">
+      <div class="control-card">
+        <div class="control-label">Contribution Rate (% of income)</div>
+        <div class="control-value" id="sc-rate-val">32.9%</div>
+        <input type="range" min="5" max="60" step="0.5" value="32.9" id="sc-rate" oninput="updateScenarios()">
+        <div class="range-labels"><span>5%</span><span></span><span>60%</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Annual Return</div>
+        <div class="control-value" id="sc-return-val">7.0%</div>
+        <input type="range" min="3" max="12" step="0.5" value="7" id="sc-return" oninput="updateScenarios()">
+        <div class="range-labels"><span>3%</span><span></span><span>12%</span></div>
+      </div>
+      <div class="control-card">
+        <div class="control-label">Income Growth / Year</div>
+        <div class="control-value" id="sc-growth-val">3.0%</div>
+        <input type="range" min="0" max="10" step="0.5" value="3" id="sc-growth" oninput="updateScenarios()">
+        <div class="range-labels"><span>0%</span><span></span><span>10%</span></div>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="scenario-stats"></div>
+
+    <div class="chart-box">
+      <div class="chart-header">
+        <div><div class="chart-title">Scenario Projection</div><div class="chart-sub" id="sc-chart-sub"></div></div>
+      </div>
+      <canvas id="chart-scenario" style="max-height:300px"></canvas>
+    </div>
+  </div>
+
+  <!-- ====== SETTINGS PAGE ====== -->
+  <div class="page" id="page-settings">
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3>Income Settings</h3>
+        <div class="field-row">
+          <div class="field-label">Annual Household Income</div>
+          <input class="field-input" id="set-income" value="176500" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Pay Periods Per Year</div>
+          <input class="field-input" id="set-payperiods" value="26" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Employee 401k % (Roth)</div>
+          <input class="field-input" id="set-401k-pct" value="7" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Employer Match %</div>
+          <input class="field-input" id="set-employer-pct" value="10" type="number">
+        </div>
+        <button class="save-btn" onclick="applySettings()">Apply Changes</button>
+      </div>
+      <div class="settings-card">
+        <h3>Fixed Contributions</h3>
+        <div class="field-row">
+          <div class="field-label">Roth IRA (Both, Annual)</div>
+          <input class="field-input" id="set-roth-ira" value="14976" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">HSA (Annual)</div>
+          <input class="field-input" id="set-hsa" value="5200" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Brokerage (Annual)</div>
+          <input class="field-input" id="set-brokerage" value="7800" type="number">
+        </div>
+        <div class="field-row">
+          <div class="field-label">Current Age</div>
+          <input class="field-input" id="set-age" value="30" type="number">
+        </div>
+        <button class="save-btn" onclick="applySettings()">Apply Changes</button>
+      </div>
+    </div>
+
+    <div class="chart-box" style="margin-top:20px">
+      <div class="chart-header"><div><div class="chart-title">Live Recalculation Preview</div><div class="chart-sub">Update fields above and hit Apply</div></div></div>
+      <div class="stat-grid" style="margin-top:16px;margin-bottom:0" id="settings-preview"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────
+let S = {
+  income: 176500,
+  payPeriods: 26,
+  emp401kPct: 7,
+  employer401kPct: 10,
+  rothIRA: 14976,
+  hsa: 5200,
+  brokerage: 7800,
+  age: 30,
+  returnRate: 7,
+  horizon: 20,
+  scenario: 'bear'
+};
+
+function derived() {
+  const emp401k = S.income * S.emp401kPct / 100;
+  const employer401k = S.income * S.employer401kPct / 100;
+  const total = S.rothIRA + S.hsa + S.brokerage + emp401k + employer401k;
+  const savingsRate = total / S.income * 100;
+  const perPaycheck = total / S.payPeriods;
+  const grossPerPaycheck = S.income / S.payPeriods;
+  // rough take-home: 22% effective tax + 401k employee contrib
+  const taxAdv = S.rothIRA + S.hsa + emp401k + employer401k;
+  const takehome = S.income * 0.78 - emp401k;
+  return { emp401k, employer401k, total, savingsRate, perPaycheck, grossPerPaycheck, taxAdv, takehome };
+}
+
+// ─── CHARTS REGISTRY ─────────────────────────────────────
+const charts = {};
+function makeChart(id, config) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, config);
+}
+
+const COLORS = {
+  green: '#00e5a0',
+  blue:  '#0099ff',
+  orange:'#ff6b35',
+  gold:  '#ffd700',
+  purple:'#a855f7',
+  pink:  '#f472b6',
+  teal:  '#2dd4bf',
+  red:   '#ff4d6d',
+};
+
+Chart.defaults.color = '#7a8799';
+Chart.defaults.borderColor = '#1e2430';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// ─── NAVIGATION ──────────────────────────────────────────
+const pageTitles = {
+  overview:    'Overview',
+  savings:     'Income & Savings',
+  investments: 'Investments',
+  networth:    'Net Worth',
+  scenarios:   'Scenarios',
+  settings:    'Settings'
+};
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('topbar-title').innerHTML = pageTitles[page] + ' <span>·</span>';
+  if (window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('open');
+  renderPage(page);
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ─── RENDER ALL ──────────────────────────────────────────
+function renderAll() {
+  renderPage('overview');
+  updateSettings();
+}
+
+function renderPage(page) {
+  const d = derived();
+  if (page === 'overview') renderOverview(d);
+  if (page === 'savings') renderSavings(d);
+  if (page === 'investments') renderInvestments();
+  if (page === 'networth') renderNetWorth();
+  if (page === 'scenarios') updateScenarios();
+  if (page === 'settings') updateSettings();
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────
+function renderOverview(d) {
+  document.getElementById('ov-total-savings').textContent = fmt(d.total);
+  document.getElementById('ov-savings-rate').textContent = `↑ ${d.savingsRate.toFixed(1)}% savings rate`;
+  document.getElementById('ov-tax-adv').textContent = fmt(d.taxAdv);
+
+  const accts = accounts(d);
+
+  // Donut chart
+  makeChart('chart-alloc', {
+    type: 'doughnut',
+    data: {
+      labels: accts.map(a => a.name),
+      datasets: [{
+        data: accts.map(a => a.annual),
+        backgroundColor: accts.map(a => a.color + '99'),
+        borderColor: accts.map(a => a.color),
+        borderWidth: 2,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '68%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 14, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.raw)} (${(c.raw/d.total*100).toFixed(1)}%)` } }
+      }
+    }
+  });
+
+  // Alloc list
+  const list = document.getElementById('alloc-list');
+  list.innerHTML = accts.map(a => `
+    <li class="alloc-item">
+      <div class="alloc-dot" style="background:${a.color}"></div>
+      <span class="alloc-name">${a.name}</span>
+      <span class="alloc-amt">${fmt(a.annual)}</span>
+      <span class="alloc-pct">${(a.annual/d.total*100).toFixed(0)}%</span>
+    </li>
+  `).join('');
+
+  // Progress bars
+  const limits = [
+    { name: 'Roth IRA (x2)', value: d.emp401k > 0 ? S.rothIRA : 0, limit: 15000, color: COLORS.green },
+    { name: 'Employee Roth 401k', value: d.emp401k, limit: 23500, color: COLORS.blue },
+    { name: 'HSA', value: S.hsa, limit: 8300, color: COLORS.gold },
+    { name: 'Employer 401k', value: d.employer401k, limit: 69000 - d.emp401k, color: COLORS.orange },
+  ];
+  document.getElementById('progress-bars').innerHTML = limits.map(l => {
+    const pct = Math.min(100, l.value / l.limit * 100);
+    return `
+      <div class="progress-row">
+        <div class="progress-info">
+          <span class="progress-name">${l.name}</span>
+          <span class="progress-pct">${fmt(l.value)} / ${fmt(l.limit)} limit <span style="color:var(--text3)">(${pct.toFixed(0)}%)</span></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${pct}%;background:${l.color}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── SAVINGS ─────────────────────────────────────────────
+function renderSavings(d) {
+  document.getElementById('sv-takehome').textContent = '~' + fmt(d.takehome);
+
+  const accts = accounts(d);
+
+  // Waterfall bar
+  const remaining = S.income - d.total;
+  const taxEst = S.income * 0.22;
+  makeChart('chart-waterfall', {
+    type: 'bar',
+    data: {
+      labels: ['Gross Income','Tax (est)','Roth IRA','Roth 401k','Employer 401k','HSA','Brokerage','Take-Home'],
+      datasets: [{
+        data: [S.income, taxEst, S.rothIRA, d.emp401k, d.employer401k, S.hsa, S.brokerage, d.takehome],
+        backgroundColor: [COLORS.blue+'88', COLORS.red+'88', COLORS.green+'88', COLORS.green+'66', COLORS.blue+'66', COLORS.gold+'88', COLORS.orange+'88', COLORS.teal+'88'],
+        borderColor: [COLORS.blue, COLORS.red, COLORS.green, COLORS.green, COLORS.blue, COLORS.gold, COLORS.orange, COLORS.teal],
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#1e2430' } },
+        x: { grid: { display: false }, ticks: { maxRotation: 30 } }
+      }
+    }
+  });
+
+  // Contributions bar
+  makeChart('chart-contribs', {
+    type: 'bar',
+    data: {
+      labels: accts.map(a => a.name),
+      datasets: [{
+        label: 'Annual',
+        data: accts.map(a => a.annual),
+        backgroundColor: accts.map(a => a.color + '88'),
+        borderColor: accts.map(a => a.color),
+        borderWidth: 1.5,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } } },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: '#1e2430' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  // Paycheck table
+  const rows = [
+    ...accts,
+    { name: 'Estimated Taxes', type: '~22% effective', annual: S.income * 0.22, perPay: S.income * 0.22 / S.payPeriods, pct: 22, pill: 'taxable' }
+  ];
+  document.getElementById('paycheck-table').innerHTML = accts.map(a => `
+    <tr>
+      <td><div class="acct-name">${a.name}</div></td>
+      <td><span class="pill ${a.pillClass}">${a.pillLabel}</span></td>
+      <td class="amount" style="color:${a.color}">${fmt(a.annual)}</td>
+      <td class="amount">${fmt(a.annual / S.payPeriods)}</td>
+      <td style="color:var(--text2)">${(a.annual/S.income*100).toFixed(1)}%</td>
+    </tr>
+  `).join('');
+}
+
+// ─── INVESTMENTS ─────────────────────────────────────────
+function renderInvestments() {
+  const d = derived();
+
+  // Tax treatment donut
+  const roth = S.rothIRA + d.emp401k;
+  const trad = d.employer401k;
+  const taxable = S.brokerage;
+  const hsa = S.hsa;
+  makeChart('chart-tax-mix', {
+    type: 'doughnut',
+    data: {
+      labels: ['Roth (tax-free growth)', 'Traditional (pre-tax)', 'HSA (triple-tax)', 'Taxable Brokerage'],
+      datasets: [{
+        data: [roth, trad, hsa, taxable],
+        backgroundColor: [COLORS.green+'88', COLORS.blue+'88', COLORS.gold+'88', COLORS.orange+'88'],
+        borderColor: [COLORS.green, COLORS.blue, COLORS.gold, COLORS.orange],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 12, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.raw)}` } }
+      }
+    }
+  });
+
+  // 10yr bar
+  const labels10 = Array.from({length:10},(_,i) => `Yr ${i+1}`);
+  const types = [
+    { label: 'Roth IRA', annual: S.rothIRA, color: COLORS.green },
+    { label: 'Roth 401k', annual: d.emp401k, color: COLORS.teal },
+    { label: 'Employer 401k', annual: d.employer401k, color: COLORS.blue },
+    { label: 'HSA', annual: S.hsa, color: COLORS.gold },
+    { label: 'Brokerage', annual: S.brokerage, color: COLORS.orange },
+  ];
+  makeChart('chart-growth10', {
+    type: 'bar',
+    data: {
+      labels: labels10,
+      datasets: types.map(t => ({
+        label: t.label,
+        data: labels10.map((_,i) => {
+          let v = 0;
+          for(let y=0;y<=i;y++) v = (v + t.annual) * 1.07;
+          return Math.round(v);
+        }),
+        backgroundColor: t.color + '77',
+        borderColor: t.color,
+        borderWidth: 1
+      }))
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, ticks: { callback: v => '$' + (v/1000).toFixed(0)+'k' }, grid: { color: '#1e2430' } }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 10, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } }
+      }
+    }
+  });
+
+  updateReturn(document.getElementById('slider-return').value);
+}
+
+function updateReturn(val) {
+  S.returnRate = parseFloat(val);
+  document.getElementById('inv-return-val').textContent = S.returnRate.toFixed(1) + '%';
+  document.getElementById('inv-return-label').textContent = `at ${S.returnRate.toFixed(1)}% return`;
+  updatePortfolioChart();
+}
+function updateYears(val) {
+  S.horizon = parseInt(val);
+  document.getElementById('inv-years-val').textContent = S.horizon + ' yrs';
+  document.getElementById('inv-proj-sub').textContent = `Assuming ${S.returnRate.toFixed(1)}% annual return · ${S.horizon} year horizon`;
+  updatePortfolioChart();
+}
+function updatePortfolioChart() {
+  const d = derived();
+  const r = S.returnRate / 100;
+  const labels = Array.from({length: S.horizon}, (_,i) => `${new Date().getFullYear() + i}`);
+  let total = 0;
+  const vals = labels.map(() => { total = (total + d.total) * (1 + r); return Math.round(total); });
+  makeChart('chart-portfolio', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Portfolio Value',
+        data: vals,
+        borderColor: COLORS.green,
+        backgroundColor: COLORS.green + '15',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: COLORS.green
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${fmt(c.raw)}` } }
+      },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1000).toFixed(0)+'k') }, grid: { color: '#1e2430' } },
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }
+      }
+    }
+  });
+}
+
+// ─── NET WORTH ────────────────────────────────────────────
+function renderNetWorth() {
+  const d = derived();
+
+  // Milestones
+  const targets = [250000, 500000, 750000, 1000000, 1500000, 2000000];
+  const r = 0.07;
+  document.getElementById('milestone-grid').innerHTML = targets.map(t => {
+    let v = 0, yr = 0;
+    while(v < t && yr < 50) { v = (v + d.total) * (1+r); yr++; }
+    const reached = yr <= 30;
+    return `
+      <div class="milestone ${reached?'reached':''}">
+        <div class="year">${yr} years (${new Date().getFullYear()+yr})</div>
+        <div class="target">${t >= 1e6 ? '$'+(t/1e6).toFixed(1)+'M' : '$'+(t/1000)+'k'}</div>
+        <div class="desc">at 7% avg return</div>
+      </div>`;
+  }).join('');
+
+  setScenario(S.scenario, document.getElementById('scen-'+S.scenario));
+  renderFireAnalysis(d);
+  renderCompound(d);
+}
+
+function setScenario(s, el) {
+  S.scenario = s;
+  document.querySelectorAll('.scenario-label').forEach(x => x.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const rates = { bear: 0.05, base: 0.07, bull: 0.10 };
+  const colors = { bear: COLORS.red, base: COLORS.green, bull: COLORS.gold };
+  const d = derived();
+  const yrs = 30;
+  const labels = Array.from({length:yrs},(_,i)=>(new Date().getFullYear()+i).toString());
+  const makeVals = r => {
+    let v=0;
+    return labels.map(()=>{ v=(v+d.total)*(1+r); return Math.round(v); });
+  };
+  makeChart('chart-nw', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Bear 5%', data: makeVals(0.05), borderColor: COLORS.red, borderWidth: s==='bear'?2:1, borderDash: s==='bear'?[]:[4,4], tension:0.4, pointRadius:0 },
+        { label: 'Base 7%', data: makeVals(0.07), borderColor: COLORS.green, borderWidth: s==='base'?2:1, borderDash: s==='base'?[]:[4,4], tension:0.4, pointRadius:0 },
+        { label: 'Bull 10%', data: makeVals(0.10), borderColor: COLORS.gold, borderWidth: s==='bull'?2:1, borderDash: s==='bull'?[]:[4,4], tension:0.4, pointRadius:0 },
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { padding: 16, boxWidth: 10 } },
+        tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } }
+      },
+      scales: {
+        y: { ticks: { callback: v => '$'+(v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'k') }, grid: { color: '#1e2430' } },
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } }
+      }
+    }
+  });
+}
+
+function renderFireAnalysis(d) {
+  const annualSpend = d.takehome - S.brokerage;
+  const fireTarget = annualSpend * 25;
+  const r = 0.07;
+  let v = 0, yr = 0;
+  while(v < fireTarget && yr < 60) { v = (v+d.total)*(1+r); yr++; }
+  document.getElementById('fire-analysis').innerHTML = `
+    <div style="padding:8px 0">
+      <div style="margin-bottom:16px">
+        <div class="stat-label">Estimated Annual Spend</div>
+        <div class="stat-value" style="font-size:20px">${fmt(annualSpend)}</div>
+        <div class="stat-sub">Take-home minus brokerage savings</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div class="stat-label">FIRE Number (25x)</div>
+        <div class="stat-value green" style="font-size:20px">${fmt(fireTarget)}</div>
+        <div class="stat-sub">4% safe withdrawal rate</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div class="stat-label">Years to FIRE</div>
+        <div class="stat-value" style="font-size:28px;color:var(--accent2)">${yr}</div>
+        <div class="stat-sub">At 7% return · Age ${S.age + yr} in ${new Date().getFullYear()+yr}</div>
+      </div>
+      <div class="progress-bar" style="height:8px">
+        <div class="progress-fill" style="width:${Math.min(100,yr/40*100)}%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+      </div>
+    </div>`;
+}
+
+function renderCompound(d) {
+  const yrs = 30;
+  const r = 0.07;
+  const labels = Array.from({length:yrs},(_,i)=>i+1);
+  let total = 0;
+  const totalVals = [], contribVals = [], growthVals = [];
+  let cumContrib = 0;
+  for(let i=0;i<yrs;i++){
+    cumContrib += d.total;
+    total = (total + d.total)*(1+r);
+    totalVals.push(Math.round(total));
+    contribVals.push(Math.round(cumContrib));
+    growthVals.push(Math.round(total - cumContrib));
+  }
+  makeChart('chart-compound', {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Your Contributions', data: contribVals, backgroundColor: COLORS.blue+'88', borderColor: COLORS.blue, borderWidth:1, stack:'a' },
+        { label: 'Compound Growth', data: growthVals, backgroundColor: COLORS.green+'88', borderColor: COLORS.green, borderWidth:1, stack:'a' }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{maxTicksLimit:8} },
+        y: { stacked:true, ticks:{callback: v=>'$'+(v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'k')}, grid:{color:'#1e2430'} }
+      },
+      plugins: {
+        legend: { position:'bottom', labels:{padding:12,boxWidth:10} },
+        tooltip: { callbacks:{label: c=>` ${c.dataset.label}: ${fmt(c.raw)}`} }
+      }
+    }
+  });
+}
+
+// ─── SCENARIOS ────────────────────────────────────────────
+function updateScenarios() {
+  const rate = parseFloat(document.getElementById('sc-rate').value);
+  const ret = parseFloat(document.getElementById('sc-return').value);
+  const growth = parseFloat(document.getElementById('sc-growth').value);
+
+  document.getElementById('sc-rate-val').textContent = rate.toFixed(1) + '%';
+  document.getElementById('sc-return-val').textContent = ret.toFixed(1) + '%';
+  document.getElementById('sc-growth-val').textContent = growth.toFixed(1) + '%';
+
+  const yrs = 30;
+  const labels = Array.from({length:yrs},(_,i)=>(new Date().getFullYear()+i).toString());
+  let income = S.income, portfolio = 0;
+  const vals = labels.map(()=>{
+    const contrib = income * rate / 100;
+    portfolio = (portfolio + contrib) * (1 + ret/100);
+    income *= (1 + growth/100);
+    return Math.round(portfolio);
+  });
+
+  const finalVal = vals[vals.length-1];
+  const totalContrib = labels.reduce((sum,_,i)=>{
+    let inc = S.income * Math.pow(1+growth/100, i);
+    return sum + inc * rate / 100;
+  }, 0);
+
+  document.getElementById('scenario-stats').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-label">30-Year Portfolio</div>
+      <div class="stat-value green">${fmt(finalVal)}</div>
+      <div class="stat-sub">At ${ret}% return</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Total Contributed</div>
+      <div class="stat-value blue">${fmt(Math.round(totalContrib))}</div>
+      <div class="stat-sub">Over 30 years</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">Investment Growth</div>
+      <div class="stat-value orange">${fmt(Math.round(finalVal - totalContrib))}</div>
+      <div class="stat-sub">From compounding</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">Multiplier</div>
+      <div class="stat-value gold">${(finalVal/totalContrib).toFixed(1)}x</div>
+      <div class="stat-sub">Every $1 becomes ${(finalVal/totalContrib).toFixed(1)}</div>
+    </div>
+  `;
+
+  document.getElementById('sc-chart-sub').textContent = `${rate.toFixed(1)}% savings rate · ${ret.toFixed(1)}% return · ${growth.toFixed(1)}% income growth`;
+
+  makeChart('chart-scenario', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Projected Portfolio',
+        data: vals,
+        borderColor: COLORS.green,
+        backgroundColor: COLORS.green + '15',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: COLORS.green
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}} },
+      scales: {
+        y: { ticks:{callback:v=>'$'+(v>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'k')}, grid:{color:'#1e2430'} },
+        x: { grid:{display:false}, ticks:{maxTicksLimit:8} }
+      }
+    }
+  });
+}
+
+// ─── SETTINGS ────────────────────────────────────────────
+function applySettings() {
+  S.income = parseFloat(document.getElementById('set-income').value) || S.income;
+  S.payPeriods = parseInt(document.getElementById('set-payperiods').value) || S.payPeriods;
+  S.emp401kPct = parseFloat(document.getElementById('set-401k-pct').value) || S.emp401kPct;
+  S.employer401kPct = parseFloat(document.getElementById('set-employer-pct').value) || S.employer401kPct;
+  S.rothIRA = parseFloat(document.getElementById('set-roth-ira').value) || S.rothIRA;
+  S.hsa = parseFloat(document.getElementById('set-hsa').value) || S.hsa;
+  S.brokerage = parseFloat(document.getElementById('set-brokerage').value) || S.brokerage;
+  S.age = parseInt(document.getElementById('set-age').value) || S.age;
+  updateSettings();
+}
+
+function updateSettings() {
+  const d = derived();
+  document.getElementById('settings-preview').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-label">Total Annual Savings</div>
+      <div class="stat-value green">${fmt(d.total)}</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Savings Rate</div>
+      <div class="stat-value blue">${d.savingsRate.toFixed(1)}%</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">Per Paycheck</div>
+      <div class="stat-value orange">${fmt(d.perPaycheck)}</div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-label">Est. Take-Home</div>
+      <div class="stat-value gold">${fmt(d.takehome)}</div>
+    </div>
+  `;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────
+function fmt(n) {
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function accounts(d) {
+  return [
+    { name: 'Roth IRA (x2)', annual: S.rothIRA, color: COLORS.green, pillClass: 'roth', pillLabel: 'Roth' },
+    { name: 'Roth 401k', annual: d.emp401k, color: COLORS.teal, pillClass: 'roth', pillLabel: 'Roth' },
+    { name: 'Employer 401k', annual: d.employer401k, color: COLORS.blue, pillClass: 'trad', pillLabel: 'Traditional' },
+    { name: 'HSA', annual: S.hsa, color: COLORS.gold, pillClass: 'hsa', pillLabel: 'HSA' },
+    { name: 'Brokerage', annual: S.brokerage, color: COLORS.orange, pillClass: 'taxable', pillLabel: 'Taxable' },
+  ];
+}
+
+// ─── DATE ─────────────────────────────────────────────────
+function setDate() {
+  document.getElementById('topbar-date').textContent =
+    new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+setDate();
+setTimeout(renderAll, 50);
+</script>
+</body>
+</html>
